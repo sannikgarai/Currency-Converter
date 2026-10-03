@@ -3,99 +3,173 @@ const BASE_URL =
 
 const dropdowns = document.querySelectorAll(".dropdown select");
 const btn = document.querySelector("form button");
+
 const fromCurr = document.querySelector(".from select");
 const toCurr = document.querySelector(".to select");
+
 const msg = document.querySelector(".msg");
 
 
+// ===============================
 // Add currencies to dropdowns
+// ===============================
+
 for (let select of dropdowns) {
+
   for (let currCode in countryList) {
+
     let newOption = document.createElement("option");
 
     newOption.innerText = currCode;
     newOption.value = currCode;
 
+    // Default From currency
     if (select.name === "from" && currCode === "USD") {
-      newOption.selected = "selected";
-    } 
+      newOption.selected = true;
+    }
+
+    // Default To currency
     else if (select.name === "to" && currCode === "INR") {
-      newOption.selected = "selected";
+      newOption.selected = true;
     }
 
     select.append(newOption);
   }
 
+  // Change flag when currency changes
   select.addEventListener("change", (evt) => {
     updateFlag(evt.target);
   });
 }
 
 
-// Update exchange rate
+// ===============================
+// Update Exchange Rate
+// ===============================
+
 const updateExchangeRate = async () => {
 
   let amount = document.querySelector(".amount input");
+
   let amtVal = amount.value;
 
+  // If amount is empty or less than 1
   if (amtVal === "" || amtVal < 1) {
+
     amtVal = 1;
+
     amount.value = "1";
   }
 
+
   try {
 
-    // Example:
-    // USD → https://.../currencies/usd.json
+    // Get selected currencies
+    let fromCurrency =
+      fromCurr.value.toLowerCase();
+
+    let toCurrency =
+      toCurr.value.toLowerCase();
+
+
+    // API URL
     const URL =
-      `${BASE_URL}/${fromCurr.value.toLowerCase()}.json`;
+      `${BASE_URL}/${fromCurrency}.json`;
 
-    let response = await fetch(URL);
+    console.log("API URL:", URL);
 
+
+    // Fetch API
+    let response =
+      await fetch(URL);
+
+
+    // Check response
     if (!response.ok) {
-      throw new Error("Unable to fetch exchange rate");
+
+      throw new Error("API request failed");
+
     }
 
-    let data = await response.json();
 
-    let fromCurrency = fromCurr.value.toLowerCase();
-    let toCurrency = toCurr.value.toLowerCase();
+    // Convert response to JSON
+    let data =
+      await response.json();
 
-    let rate = data[fromCurrency][toCurrency];
+    console.log("API Data:", data);
 
-    let finalAmount = amtVal * rate;
 
+    // Get exchange rate
+    let rate =
+      data[fromCurrency][toCurrency];
+
+    console.log("Exchange Rate:", rate);
+
+
+    // Check rate
+    if (rate === undefined) {
+
+      throw new Error("Exchange rate not found");
+
+    }
+
+
+    // Calculate final amount
+    let finalAmount =
+      Number(amtVal) * rate;
+
+
+    // Display result
     msg.innerText =
       `${amtVal} ${fromCurr.value} = ${finalAmount.toFixed(2)} ${toCurr.value}`;
 
+
   } catch (error) {
 
-    console.log(error);
+    console.error("Error:", error);
 
-    msg.innerText = "Unable to get exchange rate. Please try again.";
+
+    // Display error message
+    msg.innerText =
+      "Unable to get exchange rate. Please try again.";
 
   }
 };
 
 
-// Update flag
+// ===============================
+// Update Flag
+// ===============================
+
 const updateFlag = (element) => {
 
-  let currCode = element.value;
+  let currCode =
+    element.value;
 
-  let countryCode = countryList[currCode];
+  let countryCode =
+    countryList[currCode];
+
 
   let newSrc =
     `https://flagsapi.com/${countryCode}/flat/64.png`;
 
+
   let img =
     element.parentElement.querySelector("img");
 
-  img.src = newSrc;
+
+  if (img) {
+
+    img.src = newSrc;
+
+  }
 };
 
 
-// Button click
+// ===============================
+// Button Click
+// ===============================
+
 btn.addEventListener("click", (evt) => {
 
   evt.preventDefault();
@@ -105,7 +179,10 @@ btn.addEventListener("click", (evt) => {
 });
 
 
-// Run when page loads
+// ===============================
+// Page Load
+// ===============================
+
 window.addEventListener("load", () => {
 
   updateExchangeRate();
